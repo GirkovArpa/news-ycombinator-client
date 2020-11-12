@@ -1,0 +1,81 @@
+body {
+  background: #F6F6EF;
+}
+
+.banner {
+  padding: .5em;
+  color: black;
+  background: #FF6600;
+}
+
+ul {}
+
+li.story {
+  list-style-type: decimal;
+  margin-right: 1em;
+  margin-bottom: 1em;
+}
+
+li.comment {
+  list-style-type: none;
+  margin-right: 1em;
+  margin-bottom: 1em;
+}
+
+div.title, div.details {
+  flow: horizontal;
+  border-spacing: 5dip;
+  vertical-align: baseline;
+}
+
+span.title, div.comment-text {
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 13dip;
+  color: black;
+}
+
+span.title {
+  cursor: pointer;
+}
+
+div.comment-text {
+  margin-top: 0.5em;
+}
+
+span.url {
+  color: #828282;
+  font-size: 11dip;
+  cursor: pointer;
+}
+
+span.url::before {
+  content: "(";
+  text-decoration: none;
+}
+
+span.url::after {
+  content: ")";
+  text-decoration: none;
+}
+
+div.details {
+  color: #828282;
+  font-size: 9dip;
+}
+
+span.kidCount:hover, span.url:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.notice {
+  font-size: 10dip;
+}
+
+div.notice {
+  flow: horizontal;
+}
+
+span.fill {
+  width: *;
+}

@@ -1,0 +1,135 @@
+include "sciter:reactor.tis";
+include "main.tis";
+
+var items = [];
+
+class App : Reactor.Component {
+  async function this() {
+    items = await fetchTopStories();
+    App.instance.update();
+  }
+
+  function attached() {
+    App.instance = this;
+  }
+
+  function render() {
+    return <div #root>
+      <Banner />
+      <List />
+    </div>;
+  }
+}
+
+class Banner : Reactor.Component {
+  function render() {
+    return <div .banner><b>Hacker News</b></div>;
+  }
+} 
+
+class List : Reactor.Component {
+  function render() {
+    const lis = items.map((item) => <Item item={item} />);
+    return <ol>{lis}</ol>;
+  }
+}
+
+class Item : Reactor.Component {
+  function this(props) {
+    this.props = props;
+  }
+
+  function render() {
+    if (this.props.item.text) return <Comment item={this.props.item} />;
+    return <TopStory item={this.props.item} />;
+  }
+}
+
+class TopStory : Reactor.Component {
+  function this(props) {
+    this.props = props;
+  }
+  function render() { 
+    const { url, type, title, time, score, kids, id, descendants, by } = this.props.item;
+    const urlShort = url.match(/https?:\/\/([\w\.]+)/)[1];
+    return <li .story>
+      <div .title>
+        <span .title>{title}</span>
+        <ExternalLink urlShort={urlShort} url={urlShort} />
+      </div>
+      <div .details>
+        <span .score>{score} points by</span>
+        <span .author>{by}</span>
+        <span .ago>x hours ago</span>|
+        <span .hide>hide</span>|
+        <CommentsLink parentItem={this.props.item} kids={kids} descendants={descendants} />
+      </div>
+    </li>;
+  } 
+}
+
+class ExternalLink : Reactor.Component {
+  function this(props) {
+    this.props = props;
+  }
+  event click {
+    Sciter.launch(this.props.url);
+  };
+  function render() {
+    return <span .url>{this.props.urlShort}</span>;
+  }
+}
+
+class Comment : Reactor.Component {
+  function this(props) {
+    this.props = props;
+  }
+  function render() {
+    const { text, url, type, title, time, score, kids, id, descendants, by } = this.props.item;
+    return <li .comment>
+      <div .details .comment>
+        <span .author>{by}</span>
+         <span .ago>x hours ago</span>
+      </div>
+      <div .title>
+        <CommentText comment={text} />
+      </div>
+    </li>;
+  }
+}
+
+class CommentText : Reactor.Component {
+  function this(props) {
+    this.props = props;
+  }
+  function render() {
+    const div = <div .comment-text></div>;
+    this.html = this.props.comment;
+    return div;
+  }
+}
+
+class CommentsLink : Reactor.Component {
+  function this(props) {
+    this.props = props;
+  }
+
+  event click() {
+    const commentIds = this.props.kids;
+    items = [this.props.parentItem];
+    fetchComments(commentIds).then((comments) => {
+      items = items.concat(comments);
+      App.instance.update();
+    });
+  }
+
+  function render() {
+    const { descendants } = this.props;
+    return <span .kidCount>{descendants} comments</span>;
+  }
+}
+
+$(.notice > a) << event click {
+  Sciter.launch(this.attributes["href"]);
+  return true;
+};

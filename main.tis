@@ -1,0 +1,35 @@
+async function fetch(which) {
+  const host = "https://hacker-news.firebaseio.com/v0";
+  const url = String.$({host}/{which}.json);
+  stdout.println("url:", url);
+  const [response] = await view.request { 
+    url: url, 
+    type: #get,
+    output: #json,
+    noCache: false
+  };
+  return response;
+} 
+
+async function fetchTopStories() {
+  const topStoryIds = await fetch("topstories");
+  const stories = [];
+  for (var storyId in topStoryIds.slice(0, Integer.min(10, topStoryIds.length - 1))) {
+    const story = await fetch("item/" + storyId);
+    stories.push(story);
+  }
+  return stories;
+}
+
+async function fetchComment(id) {
+  return await fetch("item/" + id);
+}
+
+async function fetchComments(ids) {
+  const comments = [];
+  for (var id in ids.slice(0, Integer.min(10, ids.length - 1))) {
+    const comment = await fetchComment(id);
+    comments.push(comment);
+  }
+  return comments;
+}
