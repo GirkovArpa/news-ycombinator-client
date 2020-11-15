@@ -20,7 +20,7 @@ class App : Reactor.Component {
     return <div #root>
       <div .banner>
         <b>Hacker News</b>
-        {(!this.items.length || this.loading) && <img src="sciter:busy.png"/>}
+        {(!this.items.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
       </div>
       { this.items.map((item) => <Item item={item} />) }
     </div>;
@@ -65,7 +65,7 @@ class TopStory : Reactor.Component {
         <span .author>{by}</span>
         <span .ago>{Date.diff(new Date(time*1000.00), new Date(), #hours)} hours ago</span>|
         <span .hide>hide</span>|
-        <span .kidCount #comment>{descendants} comments</span>;
+        <span .kidCount #comment>{descendants} comments</span>
       </div>
     </li>;
   } 

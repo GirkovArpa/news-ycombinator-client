@@ -8,7 +8,11 @@ body {
   background: #FF6600;
 }
 
-ul {}
+.banner>.spinner {
+  vertical-align: middle;
+  margin-left: .5em;
+}
+
 
 li.story {
   list-style-type: decimal;
