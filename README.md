@@ -18,7 +18,7 @@ Run [scapp.exe](https://github.com/c-smile/sciter-sdk/tree/master/bin.win/x64) i
 
 ## Preview
 
-![preview](https://i.imgur.com/eDjOGub.gif);
+![preview](preview.gif);
 
 ## Todo
 
