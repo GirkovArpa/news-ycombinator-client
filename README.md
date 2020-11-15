@@ -24,5 +24,5 @@ Run [scapp.exe](https://github.com/c-smile/sciter-sdk/tree/master/bin.win/x64) i
 
 - [ ] Lazy loading
 - [ ] Back button
-- [ ] Hours ago
+- [x] Hours ago
 - [ ] Comment children
