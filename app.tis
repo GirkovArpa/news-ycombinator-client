@@ -1,56 +1,59 @@
 include "sciter:reactor.tis";
-include "main.tis";
-
-var items = [];
+import { api } from 'main.tis';
 
 class App : Reactor.Component {
-  async function this() {
-    items = await fetchTopStories();
-    App.instance.update();
+  this var items = [];
+
+  attached(){
+    this.update { items:await api.fetchTopStories() }
+  }
+  
+  event comment-click (evt){
+    const commentIds = evt.data.kids;
+    this.update { items: [evt.data.parentItem], loading: true };
+    api.fetchComments(commentIds).then((comments) => {
+      this.update {items: [...this.items, ...comments], loading: false};
+    });    
   }
 
-  function attached() {
-    App.instance = this;
-  }
-
-  function render() {
+  render() {
     return <div #root>
-      <Banner />
-      <List />
+      <div .banner>
+        <b>Hacker News</b>
+        {(!this.items.length || this.loading) && <img src="sciter:busy.png"/>}
+      </div>
+      { this.items.map((item) => <Item item={item} />) }
     </div>;
   }
 }
 
-class Banner : Reactor.Component {
-  function render() {
-    return <div .banner><b>Hacker News</b></div>;
-  }
-} 
-
-class List : Reactor.Component {
-  function render() {
-    const lis = items.map((item) => <Item item={item} />);
-    return <ol>{lis}</ol>;
-  }
-}
-
 class Item : Reactor.Component {
+
   function this(props) {
-    this.props = props;
+    //one way to expand props
+    this.extend(props);
   }
 
-  function render() {
-    if (this.props.item.text) return <Comment item={this.props.item} />;
-    return <TopStory item={this.props.item} />;
+  render() {
+    return this.item.type === "comment" ? <Comment item={this.item} /> : <TopStory item={this.item} />;
   }
 }
 
 class TopStory : Reactor.Component {
+  this var item;
+  
   function this(props) {
-    this.props = props;
+    //better way to expand props for readability
+    this.item = props.item;
   }
-  function render() { 
-    const { url, type, title, time, score, kids, id, descendants, by } = this.props.item;
+
+  event click $(#comment) (evt, el) {
+    //let the handling of state change to parent.
+    this.postEvent('comment-click', {parentItem: this.item, kids: this.item.kids});
+  }
+
+  render() {
+    const { url, type, title, time, score, kids, id, descendants, by } = this.item;
     const urlShort = url.match(/https?:\/\/([\w\.]+)/)[1];
     return <li .story>
       <div .title>
@@ -60,9 +63,9 @@ class TopStory : Reactor.Component {
       <div .details>
         <span .score>{score} points by</span>
         <span .author>{by}</span>
-        <span .ago>x hours ago</span>|
+        <span .ago>{Date.diff(new Date(time*1000.00), new Date(), #hours)} hours ago</span>|
         <span .hide>hide</span>|
-        <CommentsLink parentItem={this.props.item} kids={kids} descendants={descendants} />
+        <span .kidCount #comment>{descendants} comments</span>;
       </div>
     </li>;
   } 
@@ -74,8 +77,9 @@ class ExternalLink : Reactor.Component {
   }
   event click {
     Sciter.launch(this.props.url);
-  };
-  function render() {
+  }
+
+  render() {
     return <span .url>{this.props.urlShort}</span>;
   }
 }
@@ -84,12 +88,13 @@ class Comment : Reactor.Component {
   function this(props) {
     this.props = props;
   }
-  function render() {
+  
+  render() {
     const { text, url, type, title, time, score, kids, id, descendants, by } = this.props.item;
     return <li .comment>
       <div .details .comment>
         <span .author>{by}</span>
-         <span .ago>x hours ago</span>
+         <span .ago>{Date.diff(new Date(time*1000.00), new Date(), #hours)} hours ago</span>
       </div>
       <div .title>
         <CommentText comment={text} />
@@ -102,30 +107,11 @@ class CommentText : Reactor.Component {
   function this(props) {
     this.props = props;
   }
-  function render() {
+  
+  render() {
     const div = <div .comment-text></div>;
     this.html = this.props.comment;
     return div;
-  }
-}
-
-class CommentsLink : Reactor.Component {
-  function this(props) {
-    this.props = props;
-  }
-
-  event click() {
-    const commentIds = this.props.kids;
-    items = [this.props.parentItem];
-    fetchComments(commentIds).then((comments) => {
-      items = items.concat(comments);
-      App.instance.update();
-    });
-  }
-
-  function render() {
-    const { descendants } = this.props;
-    return <span .kidCount>{descendants} comments</span>;
   }
 }
 
