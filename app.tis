@@ -2,17 +2,17 @@ include "sciter:reactor.tis";
 import { api } from 'main.tis';
 
 class App : Reactor.Component {
-  this var items = [];
+  this var posts = [];
 
-  attached(){
-    this.update { items:await api.fetchTopStories() }
+  async function attached(){
+    this.update { posts:await api.fetchTopStories() }
   }
   
   event comment-click (evt){
     const commentIds = evt.data.kids;
-    this.update { items: [evt.data.parentItem], loading: true };
+    this.update { posts: [evt.data.parentItem], loading: true };
     api.fetchComments(commentIds).then((comments) => {
-      this.update {items: [...this.items, ...comments], loading: false};
+      this.update {posts: [...this.posts, ...comments], loading: false};
     });    
   }
 
@@ -20,10 +20,12 @@ class App : Reactor.Component {
     return <div #root>
       <div .banner>
         <b>Hacker News</b>
-        {(!this.items.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
+        {(!this.posts.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
       </div>
-      { this.items.map((item) => <Item item={item} />) }
-    </div>;
+        <ol>
+        { this.posts.map((item) => <Item item={item} />) }
+        </ol>
+      </div>;
   }
 }
 

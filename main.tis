@@ -32,7 +32,6 @@ export namespace api {
       const comment = await fetchComment(id);
       comments.push(comment);
     }
-    debug info: comments;
     return comments;
   }
 }  
