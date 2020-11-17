@@ -5,7 +5,12 @@ class App : Reactor.Component {
   this var posts = [];
 
   async function attached(){
-    this.update { posts:await api.fetchTopStories() }
+    const stories = await api.fetchTopStories();
+    for (var id in stories.slice(0, Integer.min(10, stories.length - 1))) {
+      const post = await api.fetchStory(id);
+      this.update { posts: [...this.posts, ...[post]], loading: true};
+    }
+    this.update { loading: false};
   }
   
   event comment-click (evt){
@@ -25,6 +30,7 @@ class App : Reactor.Component {
         <ol>
         { this.posts.map((item) => <Item item={item} />) }
         </ol>
+        <a href>more</a>
       </div>;
   }
 }
@@ -49,6 +55,10 @@ class TopStory : Reactor.Component {
     this.item = props.item;
   }
 
+  event click $(span.title, span.url) (evt, el) {
+    Sciter.launch(el.@#url);
+  }
+
   event click $(#comment) (evt, el) {
     //let the handling of state change to parent.
     this.postEvent('comment-click', {parentItem: this.item, kids: this.item.kids});
@@ -59,8 +69,8 @@ class TopStory : Reactor.Component {
     const urlShort = url.match(/https?:\/\/([\w\.]+)/)[1];
     return <li .story>
       <div .title>
-        <span .title>{title}</span>
-        <ExternalLink urlShort={urlShort} url={urlShort} />
+        <span .title url={url}>{title}</span>
+        <span .url urlShort={urlShort} url={url} >{urlShort}</span>
       </div>
       <div .details>
         <span .score>{score} points by</span>
@@ -71,19 +81,6 @@ class TopStory : Reactor.Component {
       </div>
     </li>;
   } 
-}
-
-class ExternalLink : Reactor.Component {
-  function this(props) {
-    this.props = props;
-  }
-  event click {
-    Sciter.launch(this.props.url);
-  }
-
-  render() {
-    return <span .url>{this.props.urlShort}</span>;
-  }
 }
 
 class Comment : Reactor.Component {
@@ -116,8 +113,3 @@ class CommentText : Reactor.Component {
     return div;
   }
 }
-
-$(.notice > a) << event click {
-  Sciter.launch(this.attributes["href"]);
-  return true;
-};
