@@ -2,15 +2,15 @@ include "sciter:reactor.tis";
 import { api } from 'main.tis';
 
 class App : Reactor.Component {
+  this var page = { from:0, to:10 };
   this var posts = [];
 
   async function attached(){
     const stories = await api.fetchTopStories();
-    for (var id in stories.slice(0, Integer.min(10, stories.length - 1))) {
-      const post = await api.fetchStory(id);
-      this.update { posts: [...this.posts, ...[post]], loading: true};
-    }
-    this.update { loading: false};
+    const ids = stories.slice(this.page.from, Integer.min(this.page.to, stories.length - 1));
+    
+    const posts = await api.fetchStory(ids);
+    this.update { posts: [...posts], loading: false};
   }
   
   event comment-click (evt){
@@ -20,17 +20,29 @@ class App : Reactor.Component {
       this.update {posts: [...this.posts, ...comments], loading: false};
     });    
   }
+  
+  event click $((more))(evt){
+    const stories = await api.fetchTopStories();
+    this.page.from = this.page.to;
+    this.page.to = this.page.from+10;
+    
+    const ids = stories.slice(this.page.from, Integer.min(this.page.to, stories.length - 1));
+    
+    const posts = await api.fetchStory(ids);
+    this.update { posts: [...posts], loading: false};    
+  }
 
   render() {
     return <div #root>
       <div .banner>
+        <span.back>&lt;&nbsp;</span>
         <b>Hacker News</b>
         {(!this.posts.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
       </div>
-        <ol>
+        <ol start={this.page.from+1}>
         { this.posts.map((item) => <Item item={item} />) }
         </ol>
-        <a href>more</a>
+        <a href (more)>more</a>
       </div>;
   }
 }
@@ -66,11 +78,11 @@ class TopStory : Reactor.Component {
 
   render() {
     const { url, type, title, time, score, kids, id, descendants, by } = this.item;
-    const urlShort = url.match(/https?:\/\/([\w\.]+)/)[1];
+    const urlShort = url?.match(/https?:\/\/([\w\.]+)/)[1] ?? '';
     return <li .story>
       <div .title>
         <span .title url={url}>{title}</span>
-        <span .url urlShort={urlShort} url={url} >{urlShort}</span>
+        {url && <span .url urlShort={urlShort} url={url} >({urlShort})</span>}
       </div>
       <div .details>
         <span .score>{score} points by</span>

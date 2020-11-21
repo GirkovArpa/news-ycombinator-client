@@ -1,6 +1,7 @@
 export namespace api {
+  const host = "https://hacker-news.firebaseio.com/v0";
+
   async function fetch(which) {
-    const host = "https://hacker-news.firebaseio.com/v0";
     const url = String.$({host}/{which}.json);
     const [response] = await view.request { 
       url: url, 
@@ -16,8 +17,12 @@ export namespace api {
     return topStoryIds;
   }
 
-  async function fetchStory(id) {
-    return await fetch("item/" + id);
+  async function fetchStory(ids) {
+    const data = await promise.when(
+      ...ids.map(:url: fetch('item/'+url))
+    )
+    .catch(:e{ debug info: 'error',e.message;});
+    return data;
   }
 
   async function fetchComment(id) {
@@ -25,11 +30,11 @@ export namespace api {
   }
 
   async function fetchComments(ids) {
-    const comments = [];
-    for (var id in ids.slice(0, Integer.min(10, ids.length - 1))) {
-      const comment = await fetchComment(id);
-      comments.push(comment);
-    }
-    return comments;
+    ids = ids.slice(0, Integer.min(10, ids.length - 1));
+    const data = await promise.when(
+      ...ids.map(:url: fetch('item/'+url))
+    )
+    .catch(:e{ debug info: 'error',e.message;});
+    return data;
   }
 }  
