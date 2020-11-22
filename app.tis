@@ -2,61 +2,76 @@ include "sciter:reactor.tis";
 import { api } from 'main.tis';
 
 class App : Reactor.Component {
-  this var page = { from:0, to:10 };
+  this var position = 0;
+  this var count = 10;
   this var posts = [];
-
-  async function attached(){
-    const stories = await api.fetchTopStories();
-    const ids = stories.slice(this.page.from, Integer.min(this.page.to, stories.length - 1));
-    
-    const posts = await api.fetchStory(ids);
-    this.update { posts: [...posts], loading: false};
-  }
+  this var isComment = false;
   
+  async function refresh(){
+    const stories = await api.fetchTopStories();
+    const ids = stories.slice(this.position, Integer.min(this.position + this.count, stories.length - 1));    
+    const posts = await api.fetchStory(ids);
+    this.update {isComment: false, posts: [...posts], loading: false};
+  }
+
+  function attached(){
+    this.refresh();
+  }
+    
   event comment-click (evt){
     const commentIds = evt.data.kids;
-    this.update { posts: [evt.data.parentItem], loading: true };
+    this.update {isComment: true, posts: [evt.data.parentItem], loading: true };
     api.fetchComments(commentIds).then((comments) => {
-      this.update {posts: [...this.posts, ...comments], loading: false};
+      this.update {isComment: true, posts: [...this.posts, ...comments], loading: false};
     });    
   }
-  
-  event click $((more))(evt){
-    const stories = await api.fetchTopStories();
-    this.page.from = this.page.to;
-    this.page.to = this.page.from+10;
-    
-    const ids = stories.slice(this.page.from, Integer.min(this.page.to, stories.length - 1));
-    
-    const posts = await api.fetchStory(ids);
-    this.update { posts: [...posts], loading: false};    
+
+  event click $(#more)(evt){
+    this.update {loading: true};
+    this.post(:: this.position += this.count);
+    this.refresh();
+  }
+
+  event click $(#back)(evt){
+    if(!this.$(li.comment)) {
+      this.update {loading: true};
+      this.post(:: this.position -= this.count);
+    }
+    this.refresh();
   }
 
   render() {
     return <div #root>
       <div .banner>
-        <span.back>&lt;&nbsp;</span>
         <b>Hacker News</b>
         {(!this.posts.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
       </div>
-        <ol start={this.page.from+1}>
-        { this.posts.map((item) => <Item item={item} />) }
+        <ol start={this.position+1}>
+        { this.posts.map((item) =>
+            item.type === "comment" ? <Comment item={item} /> : <TopStory item={item} />
+          )  
+        }
         </ol>
-        <a href (more)>more</a>
+        <Traverse 
+          position={this.position} 
+          length={this.posts.length} 
+          loading={this.loading}
+          isComment={this.isComment}
+        />
       </div>;
   }
 }
 
-class Item : Reactor.Component {
-
-  function this(props) {
-    //one way to expand props
-    this.extend(props);
-  }
-
-  render() {
-    return this.item.type === "comment" ? <Comment item={this.item} /> : <TopStory item={this.item} />;
-  }
+function Traverse(item) {
+  return item.isComment ? 
+  <div>
+    <span .back #back>&lt;back&nbsp;</span>
+  </div>
+  :
+  <div>
+    {item.position > 0 && <span .back #back>&lt;back&nbsp;</span>}
+    {(item.length || itemloading) && <a href #more>more</a>}
+  </div>;
 }
 
 class TopStory : Reactor.Component {

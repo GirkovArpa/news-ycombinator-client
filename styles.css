@@ -73,3 +73,8 @@ div.notice {
 span.fill {
   width: *;
 }
+
+span.back {
+  color: #FF6600;
+  cursor: pointer
+}
