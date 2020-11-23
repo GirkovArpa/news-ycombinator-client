@@ -1,8 +1,8 @@
 export namespace api {
+  const host = "https://hacker-news.firebaseio.com/v0";
+
   async function fetch(which) {
-    const host = "https://hacker-news.firebaseio.com/v0";
     const url = String.$({host}/{which}.json);
-    stdout.println("url:", url);
     const [response] = await view.request { 
       url: url, 
       type: #get,
@@ -14,12 +14,15 @@ export namespace api {
 
   async function fetchTopStories() {
     const topStoryIds = await fetch("topstories");
-    const stories = [];
-    for (var storyId in topStoryIds.slice(0, Integer.min(10, topStoryIds.length - 1))) {
-      const story = await fetch("item/" + storyId);
-      stories.push(story);
-    }
-    return stories;
+    return topStoryIds;
+  }
+
+  async function fetchStory(ids) {
+    const data = await promise.when(
+      ...ids.map(:url: fetch("item/" + url))
+    )
+    .catch(:e{ debug info: 'error',e.message;});
+    return data;
   }
 
   async function fetchComment(id) {
@@ -27,12 +30,11 @@ export namespace api {
   }
 
   async function fetchComments(ids) {
-    const comments = [];
-    for (var id in ids.slice(0, Integer.min(10, ids.length - 1))) {
-      const comment = await fetchComment(id);
-      comments.push(comment);
-    }
-    debug info: comments;
-    return comments;
+    ids = ids.slice(0, Integer.min(10, ids.length - 1));
+    const data = await promise.when(
+      ...ids.map(:url: fetch("item/" + url))
+    )
+    .catch(:e{ debug info: 'error',e.message;});
+    return data;
   }
 }  

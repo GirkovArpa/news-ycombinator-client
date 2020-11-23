@@ -52,16 +52,6 @@ span.url {
   cursor: pointer;
 }
 
-span.url::before {
-  content: "(";
-  text-decoration: none;
-}
-
-span.url::after {
-  content: ")";
-  text-decoration: none;
-}
-
 div.details {
   color: #828282;
   font-size: 9dip;
@@ -82,4 +72,9 @@ div.notice {
 
 span.fill {
   width: *;
+}
+
+span.back {
+  color: #FF6600;
+  cursor: pointer
 }

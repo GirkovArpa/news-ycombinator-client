@@ -2,41 +2,76 @@ include "sciter:reactor.tis";
 import { api } from 'main.tis';
 
 class App : Reactor.Component {
-  this var items = [];
-
-  attached(){
-    this.update { items:await api.fetchTopStories() }
-  }
+  this var position = 0;
+  this var count = 10;
+  this var posts = [];
+  this var isComment = false;
   
+  async function refresh(){
+    const stories = await api.fetchTopStories();
+    const ids = stories.slice(this.position, Integer.min(this.position + this.count, stories.length - 1));    
+    const posts = await api.fetchStory(ids);
+    this.update {isComment: false, posts: [...posts], loading: false};
+  }
+
+  function attached(){
+    this.refresh();
+  }
+    
   event comment-click (evt){
     const commentIds = evt.data.kids;
-    this.update { items: [evt.data.parentItem], loading: true };
+    this.update {isComment: true, posts: [evt.data.parentItem], loading: true };
     api.fetchComments(commentIds).then((comments) => {
-      this.update {items: [...this.items, ...comments], loading: false};
+      this.update {isComment: true, posts: [...this.posts, ...comments], loading: false};
     });    
+  }
+
+  event click $(#more)(evt){
+    this.update {loading: true};
+    this.post(:: this.position += this.count);
+    this.refresh();
+  }
+
+  event click $(#back)(evt){
+    if(!this.$(li.comment)) {
+      this.update {loading: true};
+      this.post(:: this.position -= this.count);
+    }
+    this.refresh();
   }
 
   render() {
     return <div #root>
       <div .banner>
         <b>Hacker News</b>
-        {(!this.items.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
+        {(!this.posts.length || this.loading) ? <img .spinner src="sciter:busy.png"/> : ""}
       </div>
-      { this.items.map((item) => <Item item={item} />) }
-    </div>;
+        <ol start={this.position+1}>
+        { this.posts.map((item) =>
+            item.type === "comment" ? <Comment item={item} /> : <TopStory item={item} />
+          )  
+        }
+        </ol>
+        <Traverse 
+          position={this.position} 
+          length={this.posts.length} 
+          loading={this.loading}
+          isComment={this.isComment}
+        />
+      </div>;
   }
 }
 
-class Item : Reactor.Component {
-
-  function this(props) {
-    //one way to expand props
-    this.extend(props);
-  }
-
-  render() {
-    return this.item.type === "comment" ? <Comment item={this.item} /> : <TopStory item={this.item} />;
-  }
+function Traverse(item) {
+  return item.isComment ? 
+  <div>
+    <span .back #back>&lt;back&nbsp;</span>
+  </div>
+  :
+  <div>
+    {item.position > 0 && <span .back #back>&lt;back&nbsp;</span>}
+    {(item.length || itemloading) && <a href #more>more</a>}
+  </div>;
 }
 
 class TopStory : Reactor.Component {
@@ -47,6 +82,10 @@ class TopStory : Reactor.Component {
     this.item = props.item;
   }
 
+  event click $(span.title, span.url) (evt, el) {
+    Sciter.launch(el.@#url);
+  }
+
   event click $(#comment) (evt, el) {
     //let the handling of state change to parent.
     this.postEvent('comment-click', {parentItem: this.item, kids: this.item.kids});
@@ -54,11 +93,11 @@ class TopStory : Reactor.Component {
 
   render() {
     const { url, type, title, time, score, kids, id, descendants, by } = this.item;
-    const urlShort = url.match(/https?:\/\/([\w\.]+)/)[1];
+    const urlShort = url?.match(/https?:\/\/([\w\.]+)/)[1] ?? '';
     return <li .story>
       <div .title>
-        <span .title>{title}</span>
-        <ExternalLink urlShort={urlShort} url={urlShort} />
+        <span .title url={url}>{title}</span>
+        {url && <span .url urlShort={urlShort} url={url} >({urlShort})</span>}
       </div>
       <div .details>
         <span .score>{score} points by</span>
@@ -69,19 +108,6 @@ class TopStory : Reactor.Component {
       </div>
     </li>;
   } 
-}
-
-class ExternalLink : Reactor.Component {
-  function this(props) {
-    this.props = props;
-  }
-  event click {
-    Sciter.launch(this.props.url);
-  }
-
-  render() {
-    return <span .url>{this.props.urlShort}</span>;
-  }
 }
 
 class Comment : Reactor.Component {
@@ -114,8 +140,3 @@ class CommentText : Reactor.Component {
     return div;
   }
 }
-
-$(.notice > a) << event click {
-  Sciter.launch(this.attributes["href"]);
-  return true;
-};
