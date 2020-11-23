@@ -30,7 +30,6 @@ export namespace api {
   }
 
   async function fetchComments(ids) {
-    ids = ids.slice(0, Integer.min(10, ids.length - 1));
     const data = await promise.when(
       ...ids.map(:url: fetch("item/" + url))
     )
