@@ -74,6 +74,17 @@ function Traverse(item) {
   </div>;
 }
 
+function getTimeDiff(time) {
+  var ago = Date.diff(new Date(time*1000.00), new Date(), #hours);
+  if(!ago) {
+    ago = Date.diff(new Date(time*1000.00), new Date(), #minutes) + " minutes ago";
+  }
+  else {
+    ago = ago + " hours ago";
+  }
+  return ago;
+}
+
 class TopStory : Reactor.Component {
   this var item;
   
@@ -102,7 +113,7 @@ class TopStory : Reactor.Component {
       <div .details>
         <span .score>{score} points by</span>
         <span .author>{by}</span>
-        <span .ago>{Date.diff(new Date(time*1000.00), new Date(), #hours)} hours ago</span>|
+        <span .ago>{getTimeDiff(time)}</span>|
         <span .hide>hide</span>|
         <span .kidCount #comment>{descendants} comments</span>
       </div>
@@ -117,10 +128,11 @@ class Comment : Reactor.Component {
   
   render() {
     const { text, url, type, title, time, score, kids, id, descendants, by } = this.props.item;
+      
     return <li .comment>
       <div .details .comment>
         <span .author>{by}</span>
-         <span .ago>{Date.diff(new Date(time*1000.00), new Date(), #hours)} hours ago</span>
+         <span .ago>{getTimeDiff(time)}</span>
       </div>
       <div .title>
         <CommentText comment={text} />
